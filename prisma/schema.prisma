@@ -87,6 +87,7 @@ model User {
   email         String    @unique
   emailVerified DateTime?
   image         String?
+  password      String?
   currency      String    @default("USD")
   timezone      String    @default("UTC")
   createdAt     DateTime  @default(now())
