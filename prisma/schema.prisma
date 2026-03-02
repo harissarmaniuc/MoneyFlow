@@ -334,7 +334,11 @@ model Notification {
   type      String   @default("info")
   read      Boolean  @default(false)
   linkTo    String?
+  dedupeKey String?
   createdAt DateTime @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@unique([userId, dedupeKey])
 }

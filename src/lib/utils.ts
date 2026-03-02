@@ -30,15 +30,49 @@ export function getDaysUntil(date: Date | string): number {
   return differenceInDays(new Date(date), new Date());
 }
 
-export function getNextDueDate(dueDay: number): Date {
-  const now = new Date();
-  const year = now.getFullYear();
-  const month = now.getMonth();
-  const candidate = new Date(year, month, dueDay);
-  if (candidate <= now) {
-    return new Date(year, month + 1, dueDay);
+function getValidDayOfMonth(year: number, month: number, day: number): number {
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  return Math.min(Math.max(1, day), daysInMonth);
+}
+
+function dateAtLocalNoon(year: number, month: number, day: number): Date {
+  return new Date(year, month, day, 12, 0, 0, 0);
+}
+
+export function getNextDueDate(dueDay: number, fromDate = new Date()): Date {
+  const year = fromDate.getFullYear();
+  const month = fromDate.getMonth();
+  const candidate = dateAtLocalNoon(year, month, getValidDayOfMonth(year, month, dueDay));
+  if (candidate <= fromDate) {
+    const nextMonth = month + 1;
+    const nextYear = year + Math.floor(nextMonth / 12);
+    const normalizedNextMonth = nextMonth % 12;
+    return dateAtLocalNoon(
+      nextYear,
+      normalizedNextMonth,
+      getValidDayOfMonth(nextYear, normalizedNextMonth, dueDay)
+    );
   }
   return candidate;
+}
+
+export function getNextBirthdayDate(birthday: Date | string, fromDate = new Date()): Date {
+  const bday = new Date(birthday);
+  const year = fromDate.getFullYear();
+  const thisYearDate = dateAtLocalNoon(
+    year,
+    bday.getMonth(),
+    getValidDayOfMonth(year, bday.getMonth(), bday.getDate())
+  );
+
+  if (thisYearDate >= fromDate) return thisYearDate;
+
+  const nextYear = year + 1;
+  return dateAtLocalNoon(
+    nextYear,
+    bday.getMonth(),
+    getValidDayOfMonth(nextYear, bday.getMonth(), bday.getDate())
+  );
 }
 
 export function calculateMonthlyAmount(amount: number, billingCycle: string): number {

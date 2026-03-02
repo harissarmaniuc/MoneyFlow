@@ -1,6 +1,8 @@
 import { z } from "zod";
 import { createTRPCRouter, protectedProcedure } from "../index";
 import { MaintenanceType } from "@prisma/client";
+import { TRPCError } from "@trpc/server";
+import { roundMoney } from "../money";
 
 const vehicleSchema = z.object({
   make: z.string().min(1),
@@ -14,7 +16,7 @@ const maintenanceSchema = z.object({
   vehicleId: z.string(),
   type: z.nativeEnum(MaintenanceType),
   description: z.string().optional(),
-  cost: z.number().positive().optional(),
+  cost: z.number().positive().transform(roundMoney).optional(),
   performedAt: z.date().optional(),
   nextDueAt: z.date().optional(),
   nextDueMiles: z.number().int().optional(),
@@ -60,7 +62,9 @@ export const vehiclesRouter = createTRPCRouter({
       const vehicle = await ctx.prisma.vehicle.findFirst({
         where: { id: input.vehicleId, userId: ctx.session.user.id },
       });
-      if (!vehicle) throw new Error("Vehicle not found");
+      if (!vehicle) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Vehicle not found" });
+      }
       return ctx.prisma.maintenanceRecord.create({ data: input });
     }),
 
@@ -70,7 +74,18 @@ export const vehiclesRouter = createTRPCRouter({
       const record = await ctx.prisma.maintenanceRecord.findFirst({
         where: { id: input.id, vehicle: { userId: ctx.session.user.id } },
       });
-      if (!record) throw new Error("Maintenance record not found");
+      if (!record) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Maintenance record not found" });
+      }
+      if (input.data.vehicleId) {
+        const vehicle = await ctx.prisma.vehicle.findFirst({
+          where: { id: input.data.vehicleId, userId: ctx.session.user.id },
+          select: { id: true },
+        });
+        if (!vehicle) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: "Invalid vehicle" });
+        }
+      }
       return ctx.prisma.maintenanceRecord.update({ where: { id: input.id }, data: input.data });
     }),
 
@@ -80,7 +95,9 @@ export const vehiclesRouter = createTRPCRouter({
       const record = await ctx.prisma.maintenanceRecord.findFirst({
         where: { id: input.id, vehicle: { userId: ctx.session.user.id } },
       });
-      if (!record) throw new Error("Maintenance record not found");
+      if (!record) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Maintenance record not found" });
+      }
       return ctx.prisma.maintenanceRecord.delete({ where: { id: input.id } });
     }),
 });

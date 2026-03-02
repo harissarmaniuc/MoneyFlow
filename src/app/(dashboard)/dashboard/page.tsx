@@ -1,6 +1,6 @@
 "use client";
 import { trpc } from "@/lib/trpc";
-import { formatCurrency, formatDate, getNextDueDate } from "@/lib/utils";
+import { formatCurrency, formatDate, getNextBirthdayDate, getNextDueDate } from "@/lib/utils";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -144,12 +144,11 @@ export default function DashboardPage() {
               ) : (
                 <div className="space-y-2">
                   {upcomingBirthdays.slice(0, 3).map((contact) => {
-                    const bday = new Date(contact.birthday);
-                    const thisYear = new Date(new Date().getFullYear(), bday.getMonth(), bday.getDate());
+                    const nextBirthday = getNextBirthdayDate(contact.birthday);
                     return (
                       <div key={contact.id} className="flex items-center justify-between text-sm">
                         <span className="font-medium">{contact.name}</span>
-                        <span className="text-muted-foreground">{thisYear.toLocaleDateString("en-US", { month: "short", day: "numeric" })}</span>
+                        <span className="text-muted-foreground">{nextBirthday.toLocaleDateString("en-US", { month: "short", day: "numeric" })}</span>
                       </div>
                     );
                   })}

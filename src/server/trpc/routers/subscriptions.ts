@@ -1,11 +1,12 @@
 import { z } from "zod";
 import { createTRPCRouter, protectedProcedure } from "../index";
 import { SubCategory, Recurrence } from "@prisma/client";
+import { roundMoney } from "../money";
 
 const subscriptionSchema = z.object({
   name: z.string().min(1),
   category: z.nativeEnum(SubCategory),
-  amount: z.number().positive(),
+  amount: z.number().positive().transform(roundMoney),
   currency: z.string().default("USD"),
   billingCycle: z.nativeEnum(Recurrence).default("MONTHLY"),
   nextBillingAt: z.date(),

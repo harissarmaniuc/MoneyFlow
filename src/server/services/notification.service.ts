@@ -1,12 +1,23 @@
 import { prisma } from "@/lib/prisma";
+import { getNextBirthdayDate, getNextDueDate } from "@/lib/utils";
+import { format } from "date-fns";
 
 export async function createNotification(
   userId: string,
   title: string,
   message: string,
   type = "info",
-  linkTo?: string
+  linkTo?: string,
+  dedupeKey?: string
 ) {
+  if (dedupeKey) {
+    return prisma.notification.upsert({
+      where: { userId_dedupeKey: { userId, dedupeKey } },
+      update: { title, message, type, linkTo, read: false },
+      create: { userId, title, message, type, linkTo, dedupeKey },
+    });
+  }
+
   return prisma.notification.create({
     data: { userId, title, message, type, linkTo },
   });
@@ -19,29 +30,22 @@ export async function checkBillNotifications(userId: string) {
 
   const bills = await prisma.bill.findMany({ where: { userId } });
 
-  for (const bill of bills) {
-    const dueDate = new Date(now.getFullYear(), now.getMonth(), bill.dueDay);
-    if (dueDate < now) dueDate.setMonth(dueDate.getMonth() + 1);
-
-    if (dueDate <= threeDaysFromNow) {
-      const existing = await prisma.notification.findFirst({
-        where: {
-          userId,
-          title: { contains: bill.name },
-          createdAt: { gte: new Date(now.getFullYear(), now.getMonth(), now.getDate()) },
-        },
-      });
-      if (!existing) {
+  await Promise.all(
+    bills.map(async (bill) => {
+      const dueDate = getNextDueDate(bill.dueDay, now);
+      if (dueDate <= threeDaysFromNow) {
+        const dueDateKey = format(dueDate, "yyyy-MM-dd");
         await createNotification(
           userId,
           `Bill Due Soon: ${bill.name}`,
-          `Your ${bill.name} bill of $${bill.amount} is due on day ${bill.dueDay}`,
+          `Your ${bill.name} bill of $${bill.amount.toFixed(2)} is due on ${format(dueDate, "MMM d")}`,
           "warning",
-          "/bills"
+          "/bills",
+          `bill:${bill.id}:${dueDateKey}`
         );
       }
-    }
-  }
+    })
+  );
 }
 
 export async function checkSubscriptionNotifications(userId: string) {
@@ -53,26 +57,21 @@ export async function checkSubscriptionNotifications(userId: string) {
     where: { userId, active: true },
   });
 
-  for (const sub of subscriptions) {
-    if (sub.nextBillingAt <= threeDaysFromNow) {
-      const existing = await prisma.notification.findFirst({
-        where: {
-          userId,
-          title: { contains: sub.name },
-          createdAt: { gte: new Date(now.getFullYear(), now.getMonth(), now.getDate()) },
-        },
-      });
-      if (!existing) {
+  await Promise.all(
+    subscriptions.map(async (sub) => {
+      if (sub.nextBillingAt <= threeDaysFromNow) {
+        const nextBillingKey = format(sub.nextBillingAt, "yyyy-MM-dd");
         await createNotification(
           userId,
           `Subscription Renewal: ${sub.name}`,
-          `Your ${sub.name} subscription of $${sub.amount} renews soon`,
+          `Your ${sub.name} subscription of $${sub.amount.toFixed(2)} renews on ${format(sub.nextBillingAt, "MMM d")}`,
           "info",
-          "/subscriptions"
+          "/subscriptions",
+          `subscription:${sub.id}:${nextBillingKey}`
         );
       }
-    }
-  }
+    })
+  );
 }
 
 export async function checkBirthdayNotifications(userId: string) {
@@ -82,28 +81,20 @@ export async function checkBirthdayNotifications(userId: string) {
 
   const contacts = await prisma.contact.findMany({ where: { userId } });
 
-  for (const contact of contacts) {
-    const bday = new Date(contact.birthday);
-    const thisYearBday = new Date(now.getFullYear(), bday.getMonth(), bday.getDate());
-    const targetDate = thisYearBday >= now ? thisYearBday : new Date(now.getFullYear() + 1, bday.getMonth(), bday.getDate());
-
-    if (targetDate <= sevenDaysFromNow) {
-      const existing = await prisma.notification.findFirst({
-        where: {
-          userId,
-          title: { contains: contact.name },
-          createdAt: { gte: new Date(now.getFullYear(), now.getMonth(), now.getDate()) },
-        },
-      });
-      if (!existing) {
+  await Promise.all(
+    contacts.map(async (contact) => {
+      const targetDate = getNextBirthdayDate(contact.birthday, now);
+      if (targetDate <= sevenDaysFromNow) {
+        const dateKey = format(targetDate, "yyyy-MM-dd");
         await createNotification(
           userId,
           `Birthday Coming Up: ${contact.name}`,
-          `${contact.name}'s birthday is on ${bday.toLocaleDateString("en-US", { month: "long", day: "numeric" })}`,
+          `${contact.name}'s birthday is on ${format(targetDate, "MMMM d")}`,
           "info",
-          "/birthdays"
+          "/birthdays",
+          `birthday:${contact.id}:${dateKey}`
         );
       }
-    }
-  }
+    })
+  );
 }

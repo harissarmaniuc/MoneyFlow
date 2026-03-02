@@ -1,4 +1,6 @@
 "use client";
+
+import Link from "next/link";
 import { trpc } from "@/lib/trpc";
 import { formatCurrency } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -7,12 +9,13 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PlusCircle, AlertCircle } from "lucide-react";
-import Link from "next/link";
 
 export default function BudgetPage() {
   const { data: budget, isLoading } = trpc.budgets.getCurrent.useQuery();
 
-  if (isLoading) return <div className="space-y-4">{[...Array(3)].map((_, i) => <Skeleton key={i} className="h-24" />)}</div>;
+  if (isLoading) {
+    return <div className="space-y-4">{[...Array(3)].map((_, i) => <Skeleton key={i} className="h-24" />)}</div>;
+  }
 
   if (!budget) {
     return (
@@ -23,7 +26,10 @@ export default function BudgetPage() {
             <AlertCircle className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
             <p className="text-muted-foreground mb-4">No active budget. Create one to start tracking your spending.</p>
             <Button asChild className="bg-emerald-600 hover:bg-emerald-700">
-              <Link href="/budget/new"><PlusCircle className="mr-2 h-4 w-4" />Create Budget</Link>
+              <Link href="/budget/new">
+                <PlusCircle className="mr-2 h-4 w-4" />
+                Create Budget
+              </Link>
             </Button>
           </CardContent>
         </Card>
@@ -38,10 +44,19 @@ export default function BudgetPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Budget</h1>
-        <Button asChild variant="outline"><Link href="/budget/expenses"><PlusCircle className="mr-2 h-4 w-4" />Add Expense</Link></Button>
+        <div className="flex gap-2">
+          <Button asChild variant="outline">
+            <Link href={`/budget/${budget.id}/edit`}>Edit Budget</Link>
+          </Button>
+          <Button asChild variant="outline">
+            <Link href="/budget/expenses">
+              <PlusCircle className="mr-2 h-4 w-4" />
+              Add Expense
+            </Link>
+          </Button>
+        </div>
       </div>
 
-      {/* Overview */}
       <Card>
         <CardHeader>
           <CardTitle>{budget.name}</CardTitle>
@@ -62,7 +77,6 @@ export default function BudgetPage() {
         </CardContent>
       </Card>
 
-      {/* Categories */}
       <div className="grid gap-4">
         <h2 className="text-lg font-semibold">Categories</h2>
         {budget.categories.map((cat) => {
@@ -73,10 +87,14 @@ export default function BudgetPage() {
               <CardContent className="py-4">
                 <div className="flex items-center justify-between mb-2">
                   <p className="font-medium">{cat.name}</p>
-                  <p className="text-sm text-muted-foreground">{formatCurrency(spent)} / {formatCurrency(cat.allocated)}</p>
+                  <p className="text-sm text-muted-foreground">
+                    {formatCurrency(spent)} / {formatCurrency(cat.allocated)}
+                  </p>
                 </div>
                 <Progress value={Math.min(pct, 100)} className="h-2" />
-                <p className="text-xs text-muted-foreground mt-1">{Math.round(pct)}% used · {formatCurrency(cat.allocated - spent)} left</p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {Math.round(pct)}% used · {formatCurrency(cat.allocated - spent)} left
+                </p>
               </CardContent>
             </Card>
           );

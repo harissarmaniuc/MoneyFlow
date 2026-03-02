@@ -9,6 +9,8 @@ import { giftsRouter } from "./routers/gifts";
 import { vehiclesRouter } from "./routers/vehicles";
 import { remindersRouter } from "./routers/reminders";
 import { notificationsRouter } from "./routers/notifications";
+import { settingsRouter } from "./routers/settings";
+import { analyticsRouter } from "./routers/analytics";
 
 export const appRouter = createTRPCRouter({
   bills: billsRouter,
@@ -21,6 +23,8 @@ export const appRouter = createTRPCRouter({
   vehicles: vehiclesRouter,
   reminders: remindersRouter,
   notifications: notificationsRouter,
+  settings: settingsRouter,
+  analytics: analyticsRouter,
 });
 
 export type AppRouter = typeof appRouter;

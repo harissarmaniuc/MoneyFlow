@@ -2,12 +2,13 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Menu, X, DollarSign, LayoutDashboard, FileText, PiggyBank, CreditCard, RefreshCw, TrendingUp, Cake, Car, Bell, Settings } from "lucide-react";
+import { Menu, X, DollarSign, LayoutDashboard, ChartColumn, FileText, PiggyBank, CreditCard, RefreshCw, TrendingUp, Cake, Car, Bell, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/analytics", label: "Analytics", icon: ChartColumn },
   { href: "/bills", label: "Bills", icon: FileText },
   { href: "/budget", label: "Budget", icon: PiggyBank },
   { href: "/debts", label: "Debts", icon: CreditCard },

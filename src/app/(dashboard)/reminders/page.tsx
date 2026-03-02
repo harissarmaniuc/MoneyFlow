@@ -18,9 +18,30 @@ export default function RemindersPage() {
   const { toast } = useToast();
   const utils = trpc.useUtils();
   const { data: reminders = [], isLoading } = trpc.reminders.getAll.useQuery();
-  const createReminder = trpc.reminders.create.useMutation({ onSuccess: () => utils.reminders.getAll.invalidate() });
-  const completeReminder = trpc.reminders.complete.useMutation({ onSuccess: () => utils.reminders.getAll.invalidate() });
-  const deleteReminder = trpc.reminders.delete.useMutation({ onSuccess: () => utils.reminders.getAll.invalidate() });
+  const createReminder = trpc.reminders.create.useMutation({
+    onSuccess: async () => {
+      await Promise.all([
+        utils.reminders.getAll.invalidate(),
+        utils.reminders.getUpcoming.invalidate({ days: 7 }),
+      ]);
+    },
+  });
+  const completeReminder = trpc.reminders.complete.useMutation({
+    onSuccess: async () => {
+      await Promise.all([
+        utils.reminders.getAll.invalidate(),
+        utils.reminders.getUpcoming.invalidate({ days: 7 }),
+      ]);
+    },
+  });
+  const deleteReminder = trpc.reminders.delete.useMutation({
+    onSuccess: async () => {
+      await Promise.all([
+        utils.reminders.getAll.invalidate(),
+        utils.reminders.getUpcoming.invalidate({ days: 7 }),
+      ]);
+    },
+  });
   const [showForm, setShowForm] = useState(false);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");

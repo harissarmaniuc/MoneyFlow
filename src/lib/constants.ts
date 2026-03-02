@@ -68,6 +68,7 @@ export const BUDGET_PERIODS = [
 
 export const NAV_ITEMS = [
   { href: "/dashboard", label: "Dashboard", icon: "LayoutDashboard" },
+  { href: "/analytics", label: "Analytics", icon: "ChartColumn" },
   { href: "/bills", label: "Bills", icon: "FileText" },
   { href: "/budget", label: "Budget", icon: "PiggyBank" },
   { href: "/debts", label: "Debts", icon: "CreditCard" },

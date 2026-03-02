@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { createTRPCRouter, protectedProcedure } from "../index";
+import { getNextBirthdayDate } from "@/lib/utils";
 
 const contactSchema = z.object({
   name: z.string().min(1),
@@ -18,7 +19,7 @@ export const contactsRouter = createTRPCRouter({
   }),
 
   getUpcoming: protectedProcedure
-    .input(z.object({ days: z.number().default(30) }))
+    .input(z.object({ days: z.number().int().min(1).max(365).default(30) }))
     .query(async ({ ctx, input }) => {
       const contacts = await ctx.prisma.contact.findMany({
         where: { userId: ctx.session.user.id },
@@ -26,17 +27,13 @@ export const contactsRouter = createTRPCRouter({
       });
       const now = new Date();
       const upcoming = contacts.filter((c) => {
-        const bday = new Date(c.birthday);
-        const thisYear = new Date(now.getFullYear(), bday.getMonth(), bday.getDate());
-        const nextYear = new Date(now.getFullYear() + 1, bday.getMonth(), bday.getDate());
-        const diff = thisYear >= now
-          ? (thisYear.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)
-          : (nextYear.getTime() - now.getTime()) / (1000 * 60 * 60 * 24);
+        const target = getNextBirthdayDate(c.birthday, now);
+        const diff = (target.getTime() - now.getTime()) / (1000 * 60 * 60 * 24);
         return diff <= input.days;
       });
       return upcoming.sort((a, b) => {
-        const aDate = new Date(now.getFullYear(), new Date(a.birthday).getMonth(), new Date(a.birthday).getDate());
-        const bDate = new Date(now.getFullYear(), new Date(b.birthday).getMonth(), new Date(b.birthday).getDate());
+        const aDate = getNextBirthdayDate(a.birthday, now);
+        const bDate = getNextBirthdayDate(b.birthday, now);
         return aDate.getTime() - bDate.getTime();
       });
     }),
