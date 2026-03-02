@@ -24,16 +24,19 @@ MoneyFlow is a personal finance dashboard built with Next.js App Router, tRPC, P
 ## Setup
 
 1. Copy `.env.example` to `.env` and fill in values.
+   - `DATABASE_URL` defaults to `file:./prisma/dev.db` (SQLite for local development)
+   - Set strong values for `AUTH_SECRET` and `CRON_SECRET`
+   - Set real `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` only if you want Google login.
 2. Install dependencies:
 
 ```bash
 npm install
 ```
 
-3. Generate Prisma client and run migrations:
+3. Generate Prisma client and push schema:
 
 ```bash
-npx prisma migrate dev
+npx prisma db push
 ```
 
 4. Start the app:
@@ -51,6 +54,9 @@ npm run dev
 - `npm run typecheck` - TypeScript checks
 - `npm run test` - run tests
 - `npm run test:watch` - run tests in watch mode
+- `npm run env:check` - validate required environment variables
+- `npm run db:push` - push schema to database
+- `npm run db:studio` - open Prisma Studio
 
 ## Cron Notifications
 

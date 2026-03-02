@@ -7,8 +7,13 @@ import {
 } from "@/server/services/notification.service";
 
 export async function POST(request: Request) {
+  const cronSecret = process.env.CRON_SECRET;
+  if (!cronSecret || cronSecret.startsWith("replace-with-")) {
+    return NextResponse.json({ error: "CRON_SECRET is not configured" }, { status: 500 });
+  }
+
   const authHeader = request.headers.get("authorization");
-  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+  if (authHeader !== `Bearer ${cronSecret}`) {
     return new NextResponse("Unauthorized", { status: 401 });
   }
 

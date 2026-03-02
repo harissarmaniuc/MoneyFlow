@@ -11,14 +11,24 @@ const credentialsSchema = z.object({
   password: z.string().min(6),
 });
 
+const hasGoogleOAuth =
+  !!process.env.GOOGLE_CLIENT_ID &&
+  !!process.env.GOOGLE_CLIENT_SECRET &&
+  !process.env.GOOGLE_CLIENT_ID.startsWith("replace-with-") &&
+  !process.env.GOOGLE_CLIENT_SECRET.startsWith("replace-with-");
+
 export const { handlers, auth, signIn, signOut } = NextAuth({
   adapter: PrismaAdapter(prisma),
   session: { strategy: "jwt" },
   providers: [
-    Google({
-      clientId: process.env.GOOGLE_CLIENT_ID!,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
-    }),
+    ...(hasGoogleOAuth
+      ? [
+          Google({
+            clientId: process.env.GOOGLE_CLIENT_ID,
+            clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+          }),
+        ]
+      : []),
     Credentials({
       name: "credentials",
       credentials: {
