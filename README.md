@@ -24,7 +24,8 @@ MoneyFlow is a personal finance dashboard built with Next.js App Router, tRPC, P
 ## Setup
 
 1. Copy `.env.example` to `.env` and fill in values.
-   - `DATABASE_URL` defaults to `file:./prisma/dev.db` (SQLite for local development)
+   - `DATABASE_URL` must be a PostgreSQL connection string
+   - For Vercel production, use a managed PostgreSQL `DATABASE_URL`
    - Set strong values for `AUTH_SECRET` and `CRON_SECRET`
    - Set real `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` only if you want Google login.
 2. Install dependencies:
@@ -43,6 +44,21 @@ npx prisma db push
 
 ```bash
 npm run dev
+```
+
+## Vercel Deployment
+
+Set these environment variables in Vercel:
+
+- `DATABASE_URL` = your managed PostgreSQL connection string
+- `NEXTAUTH_URL` = `https://<your-domain>`
+- `AUTH_SECRET` = long random secret
+- `CRON_SECRET` = long random secret
+
+Then apply schema to the production database (once per environment):
+
+```bash
+npx prisma db push
 ```
 
 ## Scripts

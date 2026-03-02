@@ -46,6 +46,24 @@ if (missing.length > 0) {
   process.exit(1);
 }
 
+const databaseUrl = lookup("DATABASE_URL");
+const nextAuthUrl = lookup("NEXTAUTH_URL");
+const runningOnVercel =
+  (process.env.VERCEL ?? "").toLowerCase() === "1" ||
+  process.env.VERCEL_ENV === "production";
+
+if (runningOnVercel) {
+  if (/localhost|127\.0\.0\.1/i.test(nextAuthUrl)) {
+    console.error("Invalid NEXTAUTH_URL for Vercel: must be your deployed HTTPS URL.");
+    process.exit(1);
+  }
+}
+
+if (databaseUrl.startsWith("file:")) {
+  console.error("Invalid DATABASE_URL: this project expects a PostgreSQL connection string.");
+  process.exit(1);
+}
+
 for (const [keyA, keyB] of optionalPairs) {
   const a = lookup(keyA);
   const b = lookup(keyB);
