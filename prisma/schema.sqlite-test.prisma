@@ -1,0 +1,344 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL_SQLITE")
+}
+
+enum BillCategory {
+  ELECTRIC
+  WATER
+  GAS
+  INTERNET
+  PHONE
+  RENT
+  MORTGAGE
+  INSURANCE
+  CUSTOM
+}
+
+enum PaymentStatus {
+  PAID
+  UNPAID
+  OVERDUE
+}
+
+enum BudgetPeriod {
+  WEEKLY
+  BIWEEKLY
+  MONTHLY
+  CUSTOM
+}
+
+enum DebtType {
+  CREDIT_CARD
+  STUDENT_LOAN
+  MORTGAGE
+  CAR_LOAN
+  PERSONAL_LOAN
+  MEDICAL
+  OTHER
+}
+
+enum SubCategory {
+  ENTERTAINMENT
+  PRODUCTIVITY
+  HEALTH
+  EDUCATION
+  NEWS
+  CLOUD
+  OTHER
+}
+
+enum MaintenanceType {
+  OIL_CHANGE
+  TIRE_ROTATION
+  BRAKE_SERVICE
+  INSPECTION
+  REGISTRATION
+  TUNE_UP
+  CUSTOM
+}
+
+enum ReminderCategory {
+  CAR
+  HOME
+  HEALTH
+  PET
+  DOCUMENT
+  FINANCIAL
+  CUSTOM
+}
+
+enum Recurrence {
+  WEEKLY
+  BIWEEKLY
+  MONTHLY
+  QUARTERLY
+  YEARLY
+  CUSTOM
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  emailVerified DateTime?
+  image         String?
+  password      String?
+  currency      String    @default("USD")
+  timezone      String    @default("UTC")
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  accounts      Account[]
+  sessions      Session[]
+  bills         Bill[]
+  budgets       Budget[]
+  expenses      Expense[]
+  debts         Debt[]
+  subscriptions Subscription[]
+  contacts      Contact[]
+  vehicles      Vehicle[]
+  reminders     Reminder[]
+  notifications Notification[]
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model Bill {
+  id         String       @id @default(cuid())
+  userId     String
+  name       String
+  category   BillCategory
+  amount     Float
+  currency   String       @default("USD")
+  dueDay     Int
+  recurrence Recurrence   @default(MONTHLY)
+  autoPay    Boolean      @default(false)
+  notes      String?
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
+
+  user     User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  payments BillPayment[]
+}
+
+model BillPayment {
+  id     String        @id @default(cuid())
+  billId String
+  amount Float
+  paidAt DateTime
+  status PaymentStatus @default(PAID)
+
+  bill Bill @relation(fields: [billId], references: [id], onDelete: Cascade)
+}
+
+model Budget {
+  id        String       @id @default(cuid())
+  userId    String
+  name      String
+  amount    Float
+  period    BudgetPeriod @default(MONTHLY)
+  startDate DateTime
+  endDate   DateTime?
+  rollover  Boolean      @default(false)
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+
+  user       User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  categories BudgetCategory[]
+}
+
+model BudgetCategory {
+  id        String  @id @default(cuid())
+  budgetId  String
+  name      String
+  allocated Float
+
+  budget   Budget    @relation(fields: [budgetId], references: [id], onDelete: Cascade)
+  expenses Expense[]
+}
+
+model Expense {
+  id               String   @id @default(cuid())
+  userId           String
+  budgetCategoryId String?
+  description      String
+  amount           Float
+  date             DateTime
+  createdAt        DateTime @default(now())
+
+  user           User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  budgetCategory BudgetCategory? @relation(fields: [budgetCategoryId], references: [id])
+}
+
+model Debt {
+  id              String   @id @default(cuid())
+  userId          String
+  name            String
+  type            DebtType
+  originalBalance Float
+  currentBalance  Float
+  interestRate    Float
+  minimumPayment  Float
+  dueDay          Int?
+  startDate       DateTime
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  user     User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  payments DebtPayment[]
+}
+
+model DebtPayment {
+  id     String   @id @default(cuid())
+  debtId String
+  amount Float
+  paidAt DateTime
+  note   String?
+
+  debt Debt @relation(fields: [debtId], references: [id], onDelete: Cascade)
+}
+
+model Subscription {
+  id            String      @id @default(cuid())
+  userId        String
+  name          String
+  category      SubCategory
+  amount        Float
+  currency      String      @default("USD")
+  billingCycle  Recurrence  @default(MONTHLY)
+  nextBillingAt DateTime
+  isFreeTrial   Boolean     @default(false)
+  trialEndsAt   DateTime?
+  active        Boolean     @default(true)
+  url           String?
+  notes         String?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Contact {
+  id           String   @id @default(cuid())
+  userId       String
+  name         String
+  birthday     DateTime
+  relationship String?
+  notes        String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  user  User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  gifts Gift[]
+}
+
+model Gift {
+  id        String  @id @default(cuid())
+  contactId String
+  name      String
+  budget    Float?
+  purchased Boolean @default(false)
+  year      Int
+  notes     String?
+
+  contact Contact @relation(fields: [contactId], references: [id], onDelete: Cascade)
+}
+
+model Vehicle {
+  id           String   @id @default(cuid())
+  userId       String
+  make         String
+  model        String
+  year         Int
+  mileage      Int      @default(0)
+  licensePlate String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  user    User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  records MaintenanceRecord[]
+}
+
+model MaintenanceRecord {
+  id           String          @id @default(cuid())
+  vehicleId    String
+  type         MaintenanceType
+  description  String?
+  cost         Float?
+  performedAt  DateTime?
+  nextDueAt    DateTime?
+  nextDueMiles Int?
+  completed    Boolean         @default(false)
+
+  vehicle Vehicle @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+}
+
+model Reminder {
+  id          String           @id @default(cuid())
+  userId      String
+  title       String
+  description String?
+  category    ReminderCategory @default(CUSTOM)
+  dueAt       DateTime
+  recurrence  Recurrence?
+  completed   Boolean          @default(false)
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  title     String
+  message   String
+  type      String   @default("info")
+  read      Boolean  @default(false)
+  linkTo    String?
+  dedupeKey String?
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@unique([userId, dedupeKey])
+}
