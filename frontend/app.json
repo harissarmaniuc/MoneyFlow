@@ -1,0 +1,36 @@
+{
+  "expo": {
+    "name": "MoneyFlows",
+    "slug": "moneyflows",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": false,
+    "updates": {
+      "enabled": true,
+      "fallbackToCacheTimeout": 0,
+      "url": "https://u.expo.dev/YOUR_EAS_PROJECT_ID"
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.moneyflows.app",
+      "infoPlist": {
+        "NSCameraUsageDescription": "MoneyFlows uses your camera to scan receipts",
+        "NSPhotoLibraryUsageDescription": "MoneyFlows reads photos to scan receipts"
+      }
+    },
+    "android": {
+      "package": "com.moneyflows.app",
+      "adaptiveIcon": {
+        "backgroundColor": "#1E40AF"
+      },
+      "permissions": ["android.permission.CAMERA", "android.permission.READ_EXTERNAL_STORAGE"]
+    },
+    "web": {
+      "bundler": "metro"
+    }
+  }
+}
